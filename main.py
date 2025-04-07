@@ -28,14 +28,14 @@ def main():
         # --- Update game logic based on phase ---
         # Update only runs during simulation phase
         if game.phase == constants.SIMULATION_PHASE:
-             game.update()
+             game.update() # Run one simulation step per frame
 
         # Drawing (always happens)
         screen.fill(constants.BLACK)
         game.draw(screen)
         pygame.display.flip()
 
-        clock.tick(10) # Limit frame rate
+        clock.tick(100) # Target 100 frames per second (100 simulation steps/sec)
 
     pygame.quit()
 

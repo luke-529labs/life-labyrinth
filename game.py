@@ -64,16 +64,22 @@ class Game:
     def update(self):
         if self.phase == constants.SIMULATION_PHASE:
             if self.turn < self.max_turns:
-                live_cell_exists = self._step_simulation()
+                live_cell_exists, state_changed = self._step_simulation()
                 self.turn += 1
 
                 # Check for win condition (set within _step_simulation)
                 # The win flag (`self.outcome_message`) is set when a cell becomes persistent in the goal zone
 
-                # --- Check for Early Stop (Loss) ---
+                # --- Check for Loss Conditions (Order matters) ---
+                # 1. No live cells left?
                 if not live_cell_exists and not self.outcome_message:
                     print(f"Simulation stopped early at turn {self.turn}. All cells died.")
                     self.outcome_message = "Game Over - All Cells Died!"
+                    self.phase = constants.GAME_OVER_PHASE
+                # 2. Grid became static (stalemate) and not already won?
+                elif not state_changed and not self.outcome_message:
+                    print(f"Simulation stopped early at turn {self.turn}. Stalemate reached.")
+                    self.outcome_message = "Game Over - Stalemate!"
                     self.phase = constants.GAME_OVER_PHASE
 
             else:
@@ -110,10 +116,11 @@ class Game:
                             queue.append((nx, ny))
 
     def _step_simulation(self):
-        """Processes one turn of the simulation. Returns True if any live cells exist after the step."""
+        """Processes one turn. Returns tuple: (live_cell_exists, state_changed)."""
         next_grid_state = copy.deepcopy(self.grid.tiles)
         newly_persistent = []
-        live_cell_found_in_step = False # Track if any cell is live
+        live_cell_found_in_step = False
+        state_changed_in_step = False # Track if any non-persistent cell changes state
 
         for x in range(constants.GRID_WIDTH):
             for y in range(constants.GRID_HEIGHT):
@@ -124,8 +131,8 @@ class Game:
                     continue
 
                 if current_tile.is_persistent:
-                    next_tile_state.is_live = True
-                    live_cell_found_in_step = True # Persistent cells are live
+                    next_tile_state.is_live = True # Ensure persistence overrides death
+                    live_cell_found_in_step = True
                     continue
 
                 live_neighbors = self.grid.get_live_neighbors(x, y)
@@ -142,32 +149,35 @@ class Game:
 
                 next_tile_state.is_live = next_state
 
+                # --- Track state changes for non-persistent cells ---
+                if current_state != next_state:
+                    state_changed_in_step = True
+
                 if next_state:
-                    live_cell_found_in_step = True # Mark if any cell becomes/stays live
+                    live_cell_found_in_step = True
 
                     # Check for Goal Zone entry & Mark for Persistence
                     if current_tile.is_goal:
                         if not next_tile_state.is_persistent:
                             next_tile_state.is_persistent = True
                             newly_persistent.append((x, y))
-                            if not self.outcome_message: # Set win message only once
+                            if not self.outcome_message:
                                 self.outcome_message = "You Win!"
-                                self.phase = constants.GAME_OVER_PHASE # Go to game over screen on win
+                                self.phase = constants.GAME_OVER_PHASE
                             print(f"Goal reached at ({x},{y}) on turn {self.turn + 1}! Win condition met.")
 
         self.grid.tiles = next_grid_state
 
         if newly_persistent:
              self._spread_persistence(newly_persistent)
-             # Check if persistence spread created any new live cells (edge case)
+             # Persistence spread itself counts as a state change
+             state_changed_in_step = True
+             # Ensure live_cell_found is true if persistence activated
              if not live_cell_found_in_step:
-                 for nx, ny in newly_persistent:
-                      if self.grid.get_tile(nx, ny).is_live:
-                          live_cell_found_in_step = True
-                          break
+                 live_cell_found_in_step = True
 
         print(f"Turn {self.turn + 1} complete.")
-        return live_cell_found_in_step # Return whether any live cells remain
+        return (live_cell_found_in_step, state_changed_in_step)
 
     def _check_final_win_condition(self):
         """Check win condition after simulation ends. Returns True if win."""
