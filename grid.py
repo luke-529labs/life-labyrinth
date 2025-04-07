@@ -97,4 +97,42 @@ class Grid:
                 # Count live neighbors, persistent or not
                 if neighbor and neighbor.is_live:
                     count += 1
-        return count 
+        return count
+
+    def place_pattern(self, top_left_x, top_left_y, pattern):
+        """Tries to place a pattern (list of relative (dx, dy) coords) on the grid.
+           Returns True if successful, False otherwise.
+           Checks all cells for validity before placing any.
+        """
+        placement_cells = []
+        # 1. Validate all target cells
+        for dx, dy in pattern:
+            target_x = top_left_x + dx
+            target_y = top_left_y + dy
+
+            # Check bounds
+            if not (0 <= target_x < self.width and 0 <= target_y < self.height):
+                print(f"Placement failed: Out of bounds at ({target_x}, {target_y})")
+                return False
+            # Check start zone
+            if not (target_x < constants.START_ZONE_WIDTH):
+                 print(f"Placement failed: Outside start zone at ({target_x}, {target_y})")
+                 return False
+            # Check tile validity (empty, not barrier, not goal)
+            tile = self.get_tile(target_x, target_y)
+            if not tile or tile.tile_type != "empty" or tile.is_goal or tile.is_live:
+                 print(f"Placement failed: Invalid tile at ({target_x}, {target_y}) - Type: {tile.tile_type if tile else 'None'}, Live: {tile.is_live if tile else 'N/A'}")
+                 return False
+
+            placement_cells.append((target_x, target_y))
+
+        # 2. If all cells are valid, place the pattern
+        if len(placement_cells) == len(pattern): # Ensure all pattern cells were validated
+             print(f"Placing pattern with {len(placement_cells)} cells...")
+             for x, y in placement_cells:
+                 self.tiles[x][y].is_live = True
+             return True
+        else:
+             # Should not happen if validation logic is correct, but as a safeguard
+             print("Placement failed: Validation mismatch.")
+             return False 

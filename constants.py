@@ -30,6 +30,14 @@ YELLOW = (255, 255, 0) # Persistent cell color
 SETUP_PHASE = 0
 SIMULATION_PHASE = 1
 GAME_OVER_PHASE = 2
+CRAFTING_PHASE = 3 # New phase for pattern editor
 
 # Simulation settings
-NUM_TURNS = 200 
+NUM_TURNS = 200
+
+# --- Craft Box Settings ---
+CRAFT_BOX_SIZES = [(5, 5), (10, 10), (10, 20), (25, 25)]
+DEFAULT_CRAFT_BOX_SIZE_INDEX = 1 # Default to 10x10
+CRAFT_GRID_CELL_SIZE = 20 # Larger cells for easier editing
+CRAFT_GRID_BG_COLOR = (30, 30, 30)
+CRAFT_UI_AREA_WIDTH = 200 # Width for buttons next to craft grid 

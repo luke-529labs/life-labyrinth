@@ -16,13 +16,9 @@ def main():
                 running = False
             # --- Pass relevant input events to the game object --- #
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                 game.handle_input(event) # Let game handle clicks based on phase
+                 game.handle_input(event)
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and game.phase == constants.SETUP_PHASE:
-                    game.start_simulation()
-                # Add optional R key for reset during setup/sim if desired
-                # elif event.key == pygame.K_r and (game.phase == constants.SETUP_PHASE or game.phase == constants.SIMULATION_PHASE):
-                #     game.reset_level()
+                 game.handle_input(event) # Let game handle ALL key presses
 
 
         # --- Update game logic based on phase ---
